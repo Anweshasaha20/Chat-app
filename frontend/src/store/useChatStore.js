@@ -16,7 +16,7 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await instance.get("/messages/users");
       set({ user: res.data });
-      toast.success("User fetched successfully");
+      // toast.success("User fetched successfully");
     } catch (error) {
       console.log("error in getAllUsers", error);
       toast.error(
@@ -32,8 +32,9 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await instance.get(`/messages/${id}`);
       set({ message: res.data });
-      toast.success("Message fetched successfully");
+      // toast.success("Message fetched successfully");
       console.log(get().message);
+      return res.data;
     } catch (error) {
       console.log("error in getMessage", error);
       toast.error(

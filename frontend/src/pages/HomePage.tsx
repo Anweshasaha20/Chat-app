@@ -4,7 +4,6 @@ import { useChatStore } from "@/store/useChatStore";
 import Sidebar from "../components/ui/Sidebar";
 import ChatContainer from "../components/ui/ChatContainer";
 import NoChatSelected from "../components/ui/NoChatSelected";
-import { UserIcon } from "@heroicons/react/24/outline"; // Importing icons
 
 export default function HomePage() {
   const { selectedUser } = useChatStore();
@@ -12,7 +11,7 @@ export default function HomePage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col">
       <Navbar />
-      <div className="flex flex-1 flex-col bg-gray-100 px-14 py-10">
+      <div className="flex flex-1 flex-col bg-gray-100 px-14 pb-10 pt-3">
         {/* Main Layout */}
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}

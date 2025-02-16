@@ -23,30 +23,41 @@ export default function ChatContainer() {
 
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
+  const [text, setText] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [localMessages, setLocalMessages] = useState<any[]>([]);
+
   useEffect(() => {
     if (messageEndRef.current && message) {
       messageEndRef.current.scrollIntoView();
     }
-  }, [message]);
-
-  const [text, setText] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  }, [localMessages]);
 
   // Fetch messages when a user is selected
   useEffect(() => {
     if (!selectedUser?._id) return;
-    getMessage(selectedUser._id);
-  }, [selectedUser?._id, getMessage]);
+    const fetchMessages = async () => {
+      const fetchedMessages = await getMessage(selectedUser._id);
+      console.log("fetchedMessages", fetchedMessages);
+      setLocalMessages(fetchedMessages || []);
+    };
+    fetchMessages();
+  }, [selectedUser?._id]);
 
   const handleSend = async (e: any) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
     try {
+      const newMessage = {
+        message: text.trim(),
+        image: imagePreview,
+        receiverId: selectedUser?._id,
+      };
       await sendMessage({ message: text.trim(), image: imagePreview });
+      setLocalMessages((prev) => [...prev, newMessage]);
       setText("");
       setImagePreview(null);
-      await getMessage(selectedUser?._id);
     } catch (error) {
       toast.error("Failed to send message");
       console.error(error);
@@ -68,13 +79,14 @@ export default function ChatContainer() {
   };
 
   if (isMessageLoading) return <div>Loading...</div>;
+  console.log("localMessages", localMessages);
 
   return (
     <div className="flex flex-col h-screen w-full bg-white shadow-lg rounded-lg max-h-[calc(100vh-120px)] ">
       {/*   need to give a max height or else the scrolling will not work
      <div className="flex-1 flex flex-col overflow-auto max-h-[calc(100vh-120px)]"> */}
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-gray-200 border-b">
+      <div className="flex items-center justify-between p-3 bg-gray-200 border-b">
         <span className="ml-3 text-lg font-semibold text-gray-800">
           {selectedUser?.name || "Chat"}
         </span>
@@ -88,7 +100,7 @@ export default function ChatContainer() {
 
       {/* Chat Messages - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-120px)]">
-        {message?.map((msg: any, index: number) => (
+        {localMessages?.map((msg: any, index: number) => (
           <div
             key={index}
             className={`flex ${
@@ -163,7 +175,12 @@ export default function ChatContainer() {
             className="flex-1 p-2 outline-none"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend(e)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isSendingLoading) {
+                e.preventDefault(); // Prevents line break or unintended behavior
+                handleSend(e);
+              }
+            }}
           />
 
           {/* Send Button */}
