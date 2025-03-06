@@ -17,7 +17,10 @@ export default function Sidebar() {
   useEffect(() => {
     getAllUsers();
   }, [getAllUsers]);
-  // const filteredUsers = showOnlineOnly ? user.filter((user: any) => onlineUsers.includes(user._id)) : user;
+
+  const filteredUsers = showOnlineOnly
+    ? user.filter((u: any) => onlineUsers.includes(u._id))
+    : user;
 
   if (isUserLoading) return <div>Loading...</div>; //TODO: display skeleton loader
 
@@ -29,44 +32,48 @@ export default function Sidebar() {
           <UserIcon className="h-6 w-6 text-gray-700" />
           <span className="text-xl text-gray-700">Contacts</span>
         </div>
-        {/* TODO: toggle online users */}
+
+        {/* Toggle Online Users */}
         <div className="flex items-center space-x-2 mt-2 pb-2">
-          <input type="checkbox" className="h-4 w-4 text-blue-500" />
+          <input
+            type="checkbox"
+            className="h-4 w-4 text-blue-500 cursor-pointer"
+            checked={showOnlineOnly}
+            onChange={() => setShowOnlineOnly(!showOnlineOnly)}
+          />
           <span className="text-gray-700">Show Online Only</span>
         </div>
         <hr />
 
         {/* Users List */}
         <div className="flex flex-col mt-4 space-y-2 overflow-y-auto">
-          {Array.isArray(user) && user.length > 0 ? (
-            user.map((user: any) => {
-              const isOnline = onlineUsers.includes(user._id); // Check if the user is online
+          {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+            filteredUsers.map((u: any) => {
+              const isOnline = onlineUsers.includes(u._id); // Check if the user is online
               return (
                 <div
-                  key={user._id}
-                  onClick={() => setSelectedUser(user)} // Set selected user when clicked
+                  key={u._id}
+                  onClick={() => setSelectedUser(u)} // Set selected user when clicked
                   className={`flex items-center space-x-3 p-3 cursor-pointer rounded-md 
                   ${
-                    selectedUser?._id === user._id
+                    selectedUser?._id === u._id
                       ? "bg-gray-200"
                       : "hover:bg-gray-100"
                   }`}
                 >
                   <div className="h-12 w-12">
-                    {user.profile_pic ? (
+                    {u.profile_pic ? (
                       <img
-                        src={user.profile_pic}
-                        alt={user.name}
+                        src={u.profile_pic}
+                        alt={u.name}
                         className="h-full w-full object-cover rounded-full"
                       />
                     ) : (
-                      <div className="h-full w-full bg-gray-300 rounded-full"></div> // fallback if no profile picture
+                      <div className="h-full w-full bg-gray-300 rounded-full"></div>
                     )}
                   </div>
-                  {/* Larger avatar */}
                   <div>
-                    <span className="text-lg text-gray-700">{user.name}</span>{" "}
-                    {/* Larger font */}
+                    <span className="text-lg text-gray-700">{u.name}</span>
                     <div
                       className={`text-sm mt-1 ${
                         isOnline ? "text-green-500" : "text-gray-500"
@@ -79,7 +86,7 @@ export default function Sidebar() {
               );
             })
           ) : (
-            <div className="text-gray-500">Loading users...</div>
+            <div className="text-gray-500">No users available.</div>
           )}
         </div>
       </div>
