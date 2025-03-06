@@ -10,12 +10,17 @@ import { useAuthStore } from "./store/useAuthStore";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import Loader from "./components/ui/Loader";
+
 function App() {
-  const { authUser, isCheckingAuth, checkAuth } = useAuthStore();
+  const { authUser, isCheckingAuth, checkAuth, onlineUsers } = useAuthStore();
+
+  console.log("app", onlineUsers);
+  //problem:
+  //when i am opening the chat for the 1st time after login ,onlineUsers is showing undefined but after refreshing it is ok
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   if (isCheckingAuth && !authUser) {
     //modify

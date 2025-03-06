@@ -93,12 +93,10 @@ export const updateProfile = async (req, res) => {
       { new: true }
     );
     console.log(updatedUser.profile_pic);
-    return res
-      .status(200)
-      .json({
-        message: "Profile updated successfully",
-        profile_pic: uploadRes.secure_url,
-      });
+    return res.status(200).json({
+      message: "Profile updated successfully",
+      profile_pic: uploadRes.secure_url,
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -106,7 +104,12 @@ export const updateProfile = async (req, res) => {
 
 export const checkAuth = async (req, res) => {
   try {
-    res.send(req.user);
+    // res.send(req.user);
+
+    const { _id, ...rest } = req.user.toObject ? req.user.toObject() : req.user;
+
+    res.json({ userId: _id, ...rest });
+    // console.log("req.user", req.user);
   } catch (error) {
     res.status(400).json({ message: "not authorized" });
   }

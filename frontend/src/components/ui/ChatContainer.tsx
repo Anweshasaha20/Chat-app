@@ -16,46 +16,36 @@ export default function ChatContainer() {
     isMessageLoading,
     getMessage,
     isSendingLoading,
+    realTimeMessageOn,
+    realTimeMessageOff,
   } = useChatStore();
 
-  // console.log("message", message);
-  // console.log("user", selectedUser);
+  const { authUser } = useAuthStore();
 
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [localMessages, setLocalMessages] = useState<any[]>([]);
 
   useEffect(() => {
     if (messageEndRef.current && message) {
-      messageEndRef.current.scrollIntoView();
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [localMessages]);
+  }, [message]);
 
   // Fetch messages when a user is selected
   useEffect(() => {
-    if (!selectedUser?._id) return;
-    const fetchMessages = async () => {
-      const fetchedMessages = await getMessage(selectedUser._id);
-      console.log("fetchedMessages", fetchedMessages);
-      setLocalMessages(fetchedMessages || []);
-    };
-    fetchMessages();
-  }, [selectedUser?._id]);
+    getMessage(selectedUser?._id);
+    realTimeMessageOn();
+    return () => realTimeMessageOff();
+  }, [selectedUser?._id, getMessage, realTimeMessageOn, realTimeMessageOff]);
 
   const handleSend = async (e: any) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
 
     try {
-      const newMessage = {
-        message: text.trim(),
-        image: imagePreview,
-        receiverId: selectedUser?._id,
-      };
       await sendMessage({ message: text.trim(), image: imagePreview });
-      setLocalMessages((prev) => [...prev, newMessage]);
       setText("");
       setImagePreview(null);
     } catch (error) {
@@ -79,7 +69,6 @@ export default function ChatContainer() {
   };
 
   if (isMessageLoading) return <div>Loading...</div>;
-  console.log("localMessages", localMessages);
 
   return (
     <div className="flex flex-col h-screen w-full bg-white shadow-lg rounded-lg max-h-[calc(100vh-120px)] ">
@@ -100,18 +89,18 @@ export default function ChatContainer() {
 
       {/* Chat Messages - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-120px)]">
-        {localMessages?.map((msg: any, index: number) => (
+        {message?.map((msg: any, index: number) => (
           <div
             key={index}
             className={`flex ${
-              msg.receiverId === selectedUser?._id
+              msg.senderId === authUser?.userId
                 ? "justify-end"
                 : "justify-start"
             }`}
           >
             <div
               className={`flex flex-col p-2 rounded-lg max-w-[75%]  ${
-                msg.receiverId === selectedUser?._id
+                msg.senderId === authUser?.userId
                   ? "bg-black text-white"
                   : "bg-gray-300 text-gray-900"
               }`}

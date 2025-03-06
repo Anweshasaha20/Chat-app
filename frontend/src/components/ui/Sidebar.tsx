@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 //@ts-ignore
 import { useChatStore } from "@/store/useChatStore";
 import { UserIcon } from "@heroicons/react/24/outline";
@@ -11,10 +11,13 @@ export default function Sidebar() {
 
   const { onlineUsers } = useAuthStore();
 
+  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+
   // Fetch all users from the API
   useEffect(() => {
     getAllUsers();
   }, [getAllUsers]);
+  // const filteredUsers = showOnlineOnly ? user.filter((user: any) => onlineUsers.includes(user._id)) : user;
 
   if (isUserLoading) return <div>Loading...</div>; //TODO: display skeleton loader
 
@@ -36,33 +39,45 @@ export default function Sidebar() {
         {/* Users List */}
         <div className="flex flex-col mt-4 space-y-2 overflow-y-auto">
           {Array.isArray(user) && user.length > 0 ? (
-            user.map((user: any) => (
-              <div
-                key={user._id}
-                onClick={() => setSelectedUser(user)} // Set selected user when clicked
-                className={`flex items-center space-x-3 p-3 cursor-pointer rounded-md 
-                ${
-                  selectedUser?._id === user._id
-                    ? "bg-gray-200"
-                    : "hover:bg-gray-100"
-                }`}
-              >
-                <div className="h-12 w-12">
-                  {user.profile_pic ? (
-                    <img
-                      src={user.profile_pic}
-                      alt={user.name}
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-gray-300 rounded-full"></div> // fallback if no profile picture
-                  )}
+            user.map((user: any) => {
+              const isOnline = onlineUsers.includes(user._id); // Check if the user is online
+              return (
+                <div
+                  key={user._id}
+                  onClick={() => setSelectedUser(user)} // Set selected user when clicked
+                  className={`flex items-center space-x-3 p-3 cursor-pointer rounded-md 
+                  ${
+                    selectedUser?._id === user._id
+                      ? "bg-gray-200"
+                      : "hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="h-12 w-12">
+                    {user.profile_pic ? (
+                      <img
+                        src={user.profile_pic}
+                        alt={user.name}
+                        className="h-full w-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gray-300 rounded-full"></div> // fallback if no profile picture
+                    )}
+                  </div>
+                  {/* Larger avatar */}
+                  <div>
+                    <span className="text-lg text-gray-700">{user.name}</span>{" "}
+                    {/* Larger font */}
+                    <div
+                      className={`text-sm mt-1 ${
+                        isOnline ? "text-green-500" : "text-gray-500"
+                      }`}
+                    >
+                      {isOnline ? "Online" : "Offline"}
+                    </div>
+                  </div>
                 </div>
-                {/* Larger avatar */}
-                <span className="text-lg text-gray-700">{user.name}</span>{" "}
-                {/* Larger font */}
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-gray-500">Loading users...</div>
           )}
