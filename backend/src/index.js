@@ -5,11 +5,14 @@ import { connectDB } from "./lib/db.js";
 import cors from "cors";
 import { io, app, server } from "./lib/socket.js";
 
+import path from "path";
+
 dotenv.config();
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 
-// app.use(express.json());
+const __dirname = path.resolve();
+
 app.use(express.json({ limit: "10mb" })); // Set limit to 10MB
 
 app.use(cookieParser());
@@ -22,6 +25,14 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  });
+}
 
 server.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
