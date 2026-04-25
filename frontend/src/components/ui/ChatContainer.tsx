@@ -20,7 +20,7 @@ export default function ChatContainer() {
     realTimeMessageOff,
   } = useChatStore();
 
-  const { authUser } = useAuthStore();
+  const { authUser, onlineUsers } = useAuthStore();
 
   const messageEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,6 +77,36 @@ export default function ChatContainer() {
     toast("Video calling feature coming soon");
   };
 
+  const isSelectedUserOnline =
+    !!selectedUser?._id && Array.isArray(onlineUsers)
+      ? onlineUsers.includes(selectedUser._id)
+      : false;
+
+  const formatMessageTime = (timestamp: string) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatMessageDate = (timestamp: string) => {
+    if (!timestamp) return "";
+
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleDateString([], {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+  };
+
   if (isMessageLoading) return <div>Loading...</div>;
 
   return (
@@ -84,34 +114,45 @@ export default function ChatContainer() {
       {/*   need to give a max height or else the scrolling will not work
      <div className="flex-1 flex flex-col overflow-auto max-h-[calc(100vh-120px)]"> */}
       {/* Header */}
-      <div className="flex items-center justify-between p-3 bg-gray-200 border-b">
-        <div className="ml-3 flex items-center gap-3">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/95 border-b border-gray-200 backdrop-blur-sm">
+        <div className="flex items-center gap-3 min-w-0">
           {selectedUser?.profile_pic ? (
             <button
               type="button"
               onClick={() => setIsProfilePhotoOpen(true)}
-              className="rounded-full"
+              className="rounded-full shrink-0"
             >
               <img
                 src={selectedUser.profile_pic}
                 alt={selectedUser?.name || "User"}
-                className="h-10 w-10 rounded-full object-cover border border-gray-300 cursor-pointer hover:opacity-90 transition"
+                className="h-11 w-11 rounded-full object-cover border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition"
               />
             </button>
           ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-400 text-white flex items-center justify-center font-semibold">
+            <div className="h-11 w-11 rounded-full bg-gray-400 text-white flex items-center justify-center font-semibold shrink-0">
               {selectedUser?.name?.charAt(0)?.toUpperCase() || "C"}
             </div>
           )}
-          <span className="text-lg font-semibold text-gray-800">
-            {selectedUser?.name || "Chat"}
-          </span>
+
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-gray-900 truncate">
+              {selectedUser?.name || "Chat"}
+            </p>
+            <p
+              className={`text-xs ${
+                isSelectedUserOnline ? "text-emerald-600" : "text-gray-500"
+              }`}
+            >
+              {isSelectedUserOnline ? "Online" : "Offline"}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={handleVoiceCall}
-            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
             aria-label="Voice call"
           >
             <Phone className="h-5 w-5" />
@@ -119,14 +160,14 @@ export default function ChatContainer() {
           <button
             type="button"
             onClick={handleVideoCall}
-            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
             aria-label="Video call"
           >
             <Video className="h-5 w-5" />
           </button>
           <button
             onClick={closeChat}
-            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            className="p-2 rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition"
             aria-label="Close chat"
           >
             <XMarkIcon className="h-6 w-6" />
@@ -135,51 +176,75 @@ export default function ChatContainer() {
       </div>
 
       {/* Chat Messages - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[calc(100vh-120px)]">
-        {message?.map((msg: any, index: number) => (
-          <div
-            key={index}
-            className={`flex ${
-              msg.senderId === authUser?.userId
-                ? "justify-end"
-                : "justify-start"
-            }`}
-          >
-            <div
-              className={`flex flex-col p-2 rounded-lg max-w-[75%]  ${
-                msg.senderId === authUser?.userId
-                  ? "bg-black text-white"
-                  : "bg-gray-300 text-gray-900"
-              }`}
-            >
-              {/* Render Image If Exists */}
-              {msg.image && (
-                <img
-                  src={msg.image}
-                  alt="Sent image"
-                  className="mt-1 w-full max-w-[300px] h-auto rounded-lg object-cover mx-auto"
-                />
+      <div className="flex-1 overflow-y-auto px-3 py-4 md:px-5 space-y-2 max-h-[calc(100vh-120px)] bg-slate-50 bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.18)_1px,transparent_0)] bg-[size:18px_18px]">
+        {message?.map((msg: any, index: number) => {
+          const isMine = msg.senderId === authUser?.userId;
+          const previousMsg = index > 0 ? message[index - 1] : null;
+          const showDateSeparator =
+            !previousMsg ||
+            formatMessageDate(previousMsg?.createdAt) !==
+              formatMessageDate(msg?.createdAt);
+
+          return (
+            <div key={index}>
+              {showDateSeparator && msg?.createdAt && (
+                <div className="flex justify-center my-3">
+                  <span className="text-[11px] font-medium text-gray-600 bg-white/90 border border-gray-200 rounded-full px-3 py-1 shadow-sm">
+                    {formatMessageDate(msg.createdAt)}
+                  </span>
+                </div>
               )}
-              {/* Render Text Message */}
-              {msg.message && (
-                <p className="pb-2 pt-2 break-words">{msg.message}</p>
-              )}
+
+              <div
+                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`flex flex-col gap-1.5 px-3 py-2.5 max-w-[78%] shadow-sm ${
+                    isMine
+                      ? "bg-gray-900 text-white rounded-2xl rounded-br-md"
+                      : "bg-white text-gray-900 border border-gray-200 rounded-2xl rounded-bl-md"
+                  }`}
+                >
+                  {msg.image && (
+                    <img
+                      src={msg.image}
+                      alt="Sent image"
+                      className="w-full max-w-[280px] h-auto rounded-xl object-cover"
+                    />
+                  )}
+
+                  {msg.message && (
+                    <p className="leading-relaxed text-[15px] break-words whitespace-pre-wrap">
+                      {msg.message}
+                    </p>
+                  )}
+
+                  {msg.createdAt && (
+                    <span
+                      className={`text-[11px] self-end ${
+                        isMine ? "text-gray-300" : "text-gray-500"
+                      }`}
+                    >
+                      {formatMessageTime(msg.createdAt)}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messageEndRef} />
       </div>
 
       {/* Input Box - Always Visible */}
-      <div className="p-4 border-t bg-white sticky bottom-0 w-full ">
-        {/* Image Preview */}
+      <div className="px-3 py-3 border-t border-gray-200 bg-white sticky bottom-0 w-full md:px-4">
         {imagePreview && (
           <div className="mb-3 flex items-center gap-2">
-            <div className="relative">
+            <div className="relative rounded-xl border border-gray-200 bg-gray-50 p-1">
               <img
                 src={imagePreview}
                 alt="Preview"
-                className="w-20 h-20 object-cover rounded-lg border border-gray-400"
+                className="w-20 h-20 object-cover rounded-lg"
               />
               <button
                 onClick={() => setImagePreview(null)}
@@ -191,9 +256,7 @@ export default function ChatContainer() {
           </div>
         )}
 
-        {/* Input Box */}
-        <div className="flex items-center border rounded-lg p-2 bg-white ">
-          {/* Image Upload Button */}
+        <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-2 py-1.5 shadow-sm">
           <label className="cursor-pointer p-2 rounded-full hover:bg-gray-200 transition">
             <input
               type="file"
@@ -201,31 +264,29 @@ export default function ChatContainer() {
               className="hidden"
               onChange={handleImageUpload}
             />
-            <ImageIcon className="h-6 w-6 text-gray-600" />
+            <ImageIcon className="h-5 w-5 text-gray-600" />
           </label>
 
-          {/* Message Input */}
           <input
             type="text"
-            placeholder="Type a message..."
-            className="flex-1 p-2 outline-none"
+            placeholder="Type a message"
+            className="flex-1 bg-transparent px-1 py-2 outline-none text-[15px]"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !isSendingLoading) {
-                e.preventDefault(); // Prevents line break or unintended behavior
+                e.preventDefault();
                 handleSend(e);
               }
             }}
           />
 
-          {/* Send Button */}
           <button
             onClick={handleSend}
             disabled={isSendingLoading}
-            className="ml-2 p-2 bg-black text-white rounded-full hover:bg-gray-900 transition"
+            className="p-2.5 bg-gray-900 text-white rounded-full hover:bg-black disabled:opacity-60 disabled:cursor-not-allowed transition"
           >
-            <Send className="h-5 w-5 rotate-45" />
+            <Send className="h-4 w-4 rotate-45" />
           </button>
         </div>
       </div>

@@ -4,8 +4,7 @@ import toast from "react-hot-toast";
 import { create } from "zustand";
 import { io } from "socket.io-client";
 
-const BASE_URL =
-  import.meta.env.MODE === "development" ? "http://localhost:3000/api" : "/";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "/";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -22,10 +21,8 @@ export const useAuthStore = create((set, get) => ({
         credentials: "include",
       });
       set({ authUser: res.data });
-
-      get().connectSocket(); //doubt
     } catch (error) {
-      set({ authUser: null });
+      set({ authUser: null, onlineUsers: [] });
       console.log("error in checkAuth", error);
     } finally {
       set({ isCheckingAuth: false });
@@ -37,10 +34,9 @@ export const useAuthStore = create((set, get) => ({
       const res = await instance.post("/auth/signup", data);
       set({ authUser: res.data });
       toast.success("Account created successfully");
-      get().connectSocket();
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Signup failed! Please try again."
+        error.response?.data?.message || "Signup failed! Please try again.",
       );
     } finally {
       set({ isSigningUp: false });
@@ -54,10 +50,9 @@ export const useAuthStore = create((set, get) => ({
 
       console.log("authUser", get().authUser);
       toast.success("Logged in successfully");
-      get().connectSocket();
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Login failed! Please try again."
+        error.response?.data?.message || "Login failed! Please try again.",
       );
     } finally {
       set({ isLoggingIn: false });
@@ -93,7 +88,7 @@ export const useAuthStore = create((set, get) => ({
     } catch (error) {
       toast.error(
         error.response?.data?.message ||
-          "Profile update failed! Please try again."
+          "Profile update failed! Please try again.",
       );
     } finally {
       set({ isUpdatingProfile: false });
@@ -101,20 +96,39 @@ export const useAuthStore = create((set, get) => ({
   },
 
   connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) return;
-    // console.log("Connecting socket for user:", authUser?.userId); // Debugging
-    const socket = io(BASE_URL, { query: { userId: authUser.userId } });
+    const { authUser, socket: existingSocket } = get();
+    if (!authUser || existingSocket?.connected) return;
+
+    if (existingSocket) {
+      existingSocket.off("getOnlineUsers");
+      existingSocket.disconnect();
+    }
+
+    const socket = io(SOCKET_URL, {
+      query: { userId: authUser.userId },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+    });
     socket.connect();
     set({ socket: socket });
     socket.on("getOnlineUsers", (users) => {
-      set({ onlineUsers: users });
+      set({ onlineUsers: Array.isArray(users) ? users : [] });
+    });
+    socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+    socket.on("disconnect", () => {
+      console.log("Socket disconnected");
     });
   },
 
   disconnectSocket: () => {
-    if (get().socket?.connected) {
-      get().socket.disconnect();
+    const socket = get().socket;
+    if (socket) {
+      socket.off("getOnlineUsers");
+      socket.disconnect();
     }
+    set({ socket: null, onlineUsers: [] });
   },
 }));

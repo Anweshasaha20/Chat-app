@@ -10,6 +10,7 @@ export default function Sidebar() {
     useChatStore();
 
   const { onlineUsers } = useAuthStore();
+  const safeOnlineUsers = Array.isArray(onlineUsers) ? onlineUsers : [];
 
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
@@ -19,7 +20,7 @@ export default function Sidebar() {
   }, [getAllUsers]);
 
   const filteredUsers = showOnlineOnly
-    ? user.filter((u: any) => onlineUsers.includes(u._id))
+    ? user.filter((u: any) => safeOnlineUsers.includes(u._id))
     : user;
 
   if (isUserLoading) return <div>Loading...</div>; //TODO: display skeleton loader
@@ -49,7 +50,7 @@ export default function Sidebar() {
         <div className="flex flex-col mt-4 space-y-2 overflow-y-auto">
           {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
             filteredUsers.map((u: any) => {
-              const isOnline = onlineUsers.includes(u._id); // Check if the user is online
+              const isOnline = safeOnlineUsers.includes(u._id); // Check if the user is online
               return (
                 <div
                   key={u._id}

@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: [process.env.CLIENT_URL || "http://localhost:5173"],
     credentials: true,
   },
 });
@@ -21,7 +21,15 @@ export function getReceiverSocketId(userId) {
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
   const userId = socket.handshake.query.userId; //sent through userAuthStore
-  if (userId) userSocketMap[userId] = socket.id;
+  
+  // Validate userId before storing
+  if (userId && typeof userId === "string" && userId.trim()) {
+    userSocketMap[userId] = socket.id;
+  } else {
+    console.warn("Invalid userId received:", userId);
+    socket.disconnect();
+    return;
+  }
 
   const onlineUsers = Object.keys(userSocketMap);
 

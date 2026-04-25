@@ -12,15 +12,25 @@ import { useEffect } from "react";
 import Loader from "./components/ui/Loader";
 
 function App() {
-  const { authUser, isCheckingAuth, checkAuth, onlineUsers } = useAuthStore();
-
-  console.log("app", onlineUsers);
-  //problem:
-  //when i am opening the chat for the 1st time after login ,onlineUsers is showing undefined but after refreshing it is ok
+  const {
+    authUser,
+    isCheckingAuth,
+    checkAuth,
+    connectSocket,
+    disconnectSocket,
+  } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  useEffect(() => {
+    if (authUser) {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [authUser, connectSocket, disconnectSocket]);
 
   if (isCheckingAuth && !authUser) {
     //modify
@@ -42,7 +52,6 @@ function App() {
           path="/settings"
           element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
         />
-        //it is seen only by logged in users
         <Route
           path="/login"
           element={!authUser ? <LoginPage /> : <Navigate to="/" />}
