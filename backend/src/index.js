@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./lib/db.js";
 import cors from "cors";
 import { io, app, server } from "./lib/socket.js";
+import Message from "./models/message.model.js";
 
 import path from "path";
 
@@ -25,6 +26,11 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.get("/api/delete", () => {
+  Message.deleteMany({}).then(() => {
+    console.log("deleted all messages");
+  });
+});
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

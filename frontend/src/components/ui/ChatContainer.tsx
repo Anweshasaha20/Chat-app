@@ -4,7 +4,7 @@ import { useChatStore } from "@/store/useChatStore";
 //@ts-ignore
 import { useAuthStore } from "@/store/useAuthStore";
 import { XMarkIcon } from "@heroicons/react/24/solid";
-import { Send, Image as ImageIcon, X } from "lucide-react";
+import { Send, Image as ImageIcon, X, Phone, Video } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ChatContainer() {
@@ -26,6 +26,7 @@ export default function ChatContainer() {
 
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isProfilePhotoOpen, setIsProfilePhotoOpen] = useState(false);
 
   useEffect(() => {
     if (messageEndRef.current && message) {
@@ -68,6 +69,14 @@ export default function ChatContainer() {
     reader.readAsDataURL(file);
   };
 
+  const handleVoiceCall = () => {
+    toast("Voice calling feature coming soon");
+  };
+
+  const handleVideoCall = () => {
+    toast("Video calling feature coming soon");
+  };
+
   if (isMessageLoading) return <div>Loading...</div>;
 
   return (
@@ -76,15 +85,53 @@ export default function ChatContainer() {
      <div className="flex-1 flex flex-col overflow-auto max-h-[calc(100vh-120px)]"> */}
       {/* Header */}
       <div className="flex items-center justify-between p-3 bg-gray-200 border-b">
-        <span className="ml-3 text-lg font-semibold text-gray-800">
-          {selectedUser?.name || "Chat"}
-        </span>
-        <button
-          onClick={closeChat}
-          className="p-2 text-gray-600 hover:text-gray-800 transition"
-        >
-          <XMarkIcon className="h-6 w-6" />
-        </button>
+        <div className="ml-3 flex items-center gap-3">
+          {selectedUser?.profile_pic ? (
+            <button
+              type="button"
+              onClick={() => setIsProfilePhotoOpen(true)}
+              className="rounded-full"
+            >
+              <img
+                src={selectedUser.profile_pic}
+                alt={selectedUser?.name || "User"}
+                className="h-10 w-10 rounded-full object-cover border border-gray-300 cursor-pointer hover:opacity-90 transition"
+              />
+            </button>
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-gray-400 text-white flex items-center justify-center font-semibold">
+              {selectedUser?.name?.charAt(0)?.toUpperCase() || "C"}
+            </div>
+          )}
+          <span className="text-lg font-semibold text-gray-800">
+            {selectedUser?.name || "Chat"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleVoiceCall}
+            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            aria-label="Voice call"
+          >
+            <Phone className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleVideoCall}
+            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            aria-label="Video call"
+          >
+            <Video className="h-5 w-5" />
+          </button>
+          <button
+            onClick={closeChat}
+            className="p-2 text-gray-600 hover:text-gray-800 transition"
+            aria-label="Close chat"
+          >
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* Chat Messages - Scrollable */}
@@ -182,6 +229,34 @@ export default function ChatContainer() {
           </button>
         </div>
       </div>
+
+      {isProfilePhotoOpen && selectedUser?.profile_pic && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+          onClick={() => setIsProfilePhotoOpen(false)}
+        >
+          <div
+            className="relative bg-white rounded-xl p-3 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setIsProfilePhotoOpen(false)}
+              className="absolute top-2 right-2 p-1 rounded-full bg-gray-800 text-white hover:bg-black"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <img
+              src={selectedUser.profile_pic}
+              alt={selectedUser?.name || "Profile"}
+              className="w-full max-h-[70vh] object-contain rounded-lg"
+            />
+            <p className="text-center mt-2 font-medium text-gray-700">
+              {selectedUser?.name}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
