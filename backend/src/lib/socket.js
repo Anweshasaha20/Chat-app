@@ -21,7 +21,7 @@ export function getReceiverSocketId(userId) {
 io.on("connection", (socket) => {
   console.log("a user connected", socket.id);
   const userId = socket.handshake.query.userId; //sent through userAuthStore
-  
+
   // Validate userId before storing
   if (userId && typeof userId === "string" && userId.trim()) {
     userSocketMap[userId] = socket.id;
@@ -43,36 +43,34 @@ io.on("connection", (socket) => {
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
   //video call events
-  socket.on("call:invite", ({ to, from, roomId }) => {
-  const receiverSocketId = getReceiverSocketId(to);
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("call:incoming", { from, roomId });
-  } else {
+  const relayCallEvent = (eventName, payload) => {
+    const { to, from, roomId } = payload || {};
+    const receiverSocketId = getReceiverSocketId(to);
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit(eventName, { from, roomId, ...payload });
+      return;
+    }
+
     socket.emit("call:error", { message: "User is offline" });
-  }
-});
+  };
 
-socket.on("call:accepted", ({ to, from, roomId }) => {
-  const receiverSocketId = getReceiverSocketId(to);
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("call:accepted", { from, roomId });
-  }
-});
-
-socket.on("call:rejected", ({ to, from, roomId }) => {
-  const receiverSocketId = getReceiverSocketId(to);
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("call:rejected", { from, roomId });
-  }
-});
-
-socket.on("call:hangup", ({ to, from, roomId }) => {
-  const receiverSocketId = getReceiverSocketId(to);
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("call:hangup", { from, roomId });
-  }
-});
-//video call events end
+  socket.on("call:invite", (payload) =>
+    relayCallEvent("call:incoming", payload),
+  );
+  socket.on("call:accepted", (payload) =>
+    relayCallEvent("call:accepted", payload),
+  );
+  socket.on("call:rejected", (payload) =>
+    relayCallEvent("call:rejected", payload),
+  );
+  socket.on("call:hangup", (payload) => relayCallEvent("call:hangup", payload));
+  socket.on("call:offer", (payload) => relayCallEvent("call:offer", payload));
+  socket.on("call:answer", (payload) => relayCallEvent("call:answer", payload));
+  socket.on("call:ice-candidate", (payload) =>
+    relayCallEvent("call:ice-candidate", payload),
+  );
+  //video call events end
 });
 
 export { io, server, app };

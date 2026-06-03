@@ -10,7 +10,9 @@ export default function IncomingCallModal() {
 
   const handleAccept = () => {
     acceptCall(incomingCall.roomId, incomingCall.from);
-    navigate(`/call/${incomingCall.roomId}`);
+    navigate(`/call/${incomingCall.roomId}`, {
+      state: { peerUserId: incomingCall.from, isCaller: false },
+    });
   };
 
   const handleReject = () => {
@@ -20,7 +22,9 @@ export default function IncomingCallModal() {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60">
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-        <p className="text-lg font-semibold text-gray-900">Incoming video call</p>
+        <p className="text-lg font-semibold text-gray-900">
+          Incoming video call
+        </p>
         <p className="mt-2 text-sm text-gray-600">
           {authUser?.name || "Someone"} is calling you.
         </p>

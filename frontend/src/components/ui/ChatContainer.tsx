@@ -71,34 +71,36 @@ export default function ChatContainer() {
     reader.readAsDataURL(file);
   };
 
- const navigate = useNavigate();
- const socket = useAuthStore.getState().socket;
+  const navigate = useNavigate();
+  const socket = useAuthStore.getState().socket;
   const handleVoiceCall = () => {
     toast("Voice calling feature coming soon");
   };
 
- const handleVideoCall = async () => {
-  if (!selectedUser?._id || !authUser?.userId || !socket) return;
+  const handleVideoCall = async () => {
+    if (!selectedUser?._id || !authUser?.userId || !socket) return;
 
-  try {
-    const res = await instance.post("/calls/create", {
-      participants: [authUser.userId, selectedUser._id],
-    });
+    try {
+      const res = await instance.post("/calls/create", {
+        participants: [authUser.userId, selectedUser._id],
+      });
 
-    const { roomId } = res.data;
+      const { roomId } = res.data;
 
-    socket.emit("call:invite", {
-      to: selectedUser._id,
-      from: authUser.userId,
-      roomId,
-    });
+      socket.emit("call:invite", {
+        to: selectedUser._id,
+        from: authUser.userId,
+        roomId,
+      });
 
-    navigate(`/call/${roomId}`);
-  } catch (error) {
-    console.error("Error starting call:", error);
-    toast.error("Could not start video call");
-  }
-};
+      navigate(`/call/${roomId}`, {
+        state: { peerUserId: selectedUser._id, isCaller: true },
+      });
+    } catch (error) {
+      console.error("Error starting call:", error);
+      toast.error("Could not start video call");
+    }
+  };
 
   const isSelectedUserOnline =
     !!selectedUser?._id && Array.isArray(onlineUsers)
