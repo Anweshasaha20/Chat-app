@@ -10,6 +10,8 @@ import { useAuthStore } from "./store/useAuthStore";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import Loader from "./components/ui/Loader";
+import CallPage from "./pages/CallPage";
+import IncomingCallModal from "./components/ui/IncomingCallModal";
 
 function App() {
   const {
@@ -64,8 +66,13 @@ function App() {
           path="/profile"
           element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
         />
+        <Route
+          path="/call/:roomId"
+          element={authUser ? <CallPage /> : <Navigate to="/login" />}
+        />
       </Routes>
       <Toaster />
+      <IncomingCallModal />
     </>
   );
 }

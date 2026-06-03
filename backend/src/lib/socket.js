@@ -42,6 +42,37 @@ io.on("connection", (socket) => {
     delete userSocketMap[userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
+  //video call events
+  socket.on("call:invite", ({ to, from, roomId }) => {
+  const receiverSocketId = getReceiverSocketId(to);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("call:incoming", { from, roomId });
+  } else {
+    socket.emit("call:error", { message: "User is offline" });
+  }
+});
+
+socket.on("call:accepted", ({ to, from, roomId }) => {
+  const receiverSocketId = getReceiverSocketId(to);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("call:accepted", { from, roomId });
+  }
+});
+
+socket.on("call:rejected", ({ to, from, roomId }) => {
+  const receiverSocketId = getReceiverSocketId(to);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("call:rejected", { from, roomId });
+  }
+});
+
+socket.on("call:hangup", ({ to, from, roomId }) => {
+  const receiverSocketId = getReceiverSocketId(to);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("call:hangup", { from, roomId });
+  }
+});
+//video call events end
 });
 
 export { io, server, app };

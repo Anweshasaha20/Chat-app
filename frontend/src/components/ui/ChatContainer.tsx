@@ -6,6 +6,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { Send, Image as ImageIcon, X, Phone, Video } from "lucide-react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import instance from "@/lib/axios";
 
 export default function ChatContainer() {
   const {
@@ -69,13 +71,34 @@ export default function ChatContainer() {
     reader.readAsDataURL(file);
   };
 
+ const navigate = useNavigate();
+ const socket = useAuthStore.getState().socket;
   const handleVoiceCall = () => {
     toast("Voice calling feature coming soon");
   };
 
-  const handleVideoCall = () => {
-    toast("Video calling feature coming soon");
-  };
+ const handleVideoCall = async () => {
+  if (!selectedUser?._id || !authUser?.userId || !socket) return;
+
+  try {
+    const res = await instance.post("/calls/create", {
+      participants: [authUser.userId, selectedUser._id],
+    });
+
+    const { roomId } = res.data;
+
+    socket.emit("call:invite", {
+      to: selectedUser._id,
+      from: authUser.userId,
+      roomId,
+    });
+
+    navigate(`/call/${roomId}`);
+  } catch (error) {
+    console.error("Error starting call:", error);
+    toast.error("Could not start video call");
+  }
+};
 
   const isSelectedUserOnline =
     !!selectedUser?._id && Array.isArray(onlineUsers)

@@ -13,6 +13,7 @@ export const useAuthStore = create((set, get) => ({
   isUpdatingProfile: false,
   onlineUsers: [],
   socket: null,
+  incomingCall: null,
 
   isCheckingAuth: true,
   checkAuth: async () => {
@@ -121,6 +122,31 @@ export const useAuthStore = create((set, get) => ({
     socket.on("disconnect", () => {
       console.log("Socket disconnected");
     });
+    //video call events
+    socket.on("call:incoming", (payload) => {
+  set({ incomingCall: payload });
+});
+
+socket.on("call:accepted", () => {
+  toast.success("Call accepted");
+  set({ incomingCall: null });
+});
+
+socket.on("call:rejected", () => {
+  toast("Call rejected");
+  set({ incomingCall: null });
+});
+
+socket.on("call:error", (payload) => {
+  toast.error(payload?.message || "User is offline");
+  set({ incomingCall: null });
+});
+
+socket.on("call:hangup", () => {
+  toast("Call ended");
+  set({ incomingCall: null });
+});
+    //video call events ends
   },
 
   disconnectSocket: () => {
@@ -131,4 +157,33 @@ export const useAuthStore = create((set, get) => ({
     }
     set({ socket: null, onlineUsers: [] });
   },
+  //video call actions
+  acceptCall: (roomId, from) => {
+  const socket = get().socket;
+  const authUser = get().authUser;
+  if (!socket || !authUser) return;
+
+  socket.emit("call:accepted", {
+    to: from,
+    from: authUser.userId,
+    roomId,
+  });
+
+  set({ incomingCall: null });
+},
+
+rejectCall: (roomId, from) => {
+  const socket = get().socket;
+  const authUser = get().authUser;
+  if (!socket || !authUser) return;
+
+  socket.emit("call:rejected", {
+    to: from,
+    from: authUser.userId,
+    roomId,
+  });
+
+  set({ incomingCall: null });
+},
+
 }));
